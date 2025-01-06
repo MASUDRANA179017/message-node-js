@@ -1,11 +1,13 @@
 const net = require("net");
 const server = net.createServer();
 
-const clients = [];
+const { decryptMessage } = require('./helper');
 
+const clients = [];
 server.on("connection", (socket) => {
   console.log("A new connection has been established");
 
+  //  
   const clientId = clients.length + 1;
   // Broadcasting a message to everyone when someone enters the chat room
   clients.map((clients) => {
@@ -15,15 +17,28 @@ server.on("connection", (socket) => {
   socket.write(`id-${clientId}`);
 
   socket.on("data", (data) => {
+
+    //console.log(data, "aa");
+    
     const dataString = data.toString("utf-8");
     const id = dataString.substring(0, dataString.indexOf("-"));
-    const message = dataString.substring(dataString.indexOf("") + 9);
-    // Broadcasting received messages to everyone
-    clients.map((client) => {
-      if (client.socket !== socket) {
-        client.socket.write(`User ${id}: ${message}`);
-      }
-    });
+    // const message = dataString.substring(dataString.indexOf("") + 9);
+
+    try {
+      // Decrypt the received message
+      const decryptedMessage = decryptMessage(dataString);
+      console.log("Decrypted message:", decryptedMessage);
+    } catch (error) {
+      console.error("Decryption error:", error.message);
+    }
+    
+  
+    //Broadcasting received messages to everyone
+    // clients.map((client) => {
+    //   if (client.socket !== socket) {
+    //     client.socket.write(`User ${id}: ${message}`);
+    //   }
+    // });
   });
 
   socket.on("end", () => {
