@@ -1,44 +1,44 @@
 const net = require("net");
 const server = net.createServer();
 
-const { decryptMessage } = require('./helper');
+const { encryptBuffer, decryptBuffer } = require('./helper');
 
+// an array of client sockets connected
 const clients = [];
-server.on("connection", (socket) => {
-  console.log("A new connection has been established");
 
-  //  
+// handle incoming connections
+server.on("connection", (socket) => {
+  
+  // client id is updated every time a new connection is established
   const clientId = clients.length + 1;
+  console.log(`A new connection to the server! user: ${clientId}`);
   // Broadcasting a message to everyone when someone enters the chat room
-  clients.map((clients) => {
-    clients.socket.write(`User ${clientId} joined`);
+  clients.map((client) => {
+    client.socket.write(`User ${clientId} joined!`);
   });
 
   socket.write(`id-${clientId}`);
 
+  // send a message to everyone connected to the server and immediately reconnect to the server again when a new connection is established to the server 
   socket.on("data", (data) => {
 
-    //console.log(data, "aa");
     
     const dataString = data.toString("utf-8");
-    const id = dataString.substring(0, dataString.indexOf("-"));
-    // const message = dataString.substring(dataString.indexOf("") + 9);
 
-    try {
-      // Decrypt the received message
-      const decryptedMessage = decryptMessage(dataString);
-      console.log("Decrypted message:", decryptedMessage);
-    } catch (error) {
-      console.error("Decryption error:", error.message);
-    }
+    //console.log(dataString);
     
+    const id = dataString.substring(0, dataString.indexOf("-"));
+    const message = dataString.substring(dataString.indexOf("-message-") + 9);
+    
+    //console.log( message,"Server Data");
   
-    //Broadcasting received messages to everyone
-    // clients.map((client) => {
-    //   if (client.socket !== socket) {
-    //     client.socket.write(`User ${id}: ${message}`);
-    //   }
-    // });
+  
+   // Broadcasting received messages to everyone
+    clients.map((client) => {
+      if (client.socket !== socket) {
+        client.socket.write(`User ${id}: ${message}`);
+      }
+    });
   });
 
   socket.on("end", () => {
