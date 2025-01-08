@@ -22,6 +22,8 @@ server.on("connection", (socket) => {
   // send a message to everyone connected to the server and immediately reconnect to the server again when a new connection is established to the server 
   socket.on("data", (data) => {
 
+    console.log(data.toString("utf-8"));
+    
     
     const dataString = data.toString("utf-8");
 

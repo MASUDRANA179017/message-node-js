@@ -1,6 +1,6 @@
 const net = require("net");
 const readline = require("readline/promises");
-const { encryptBuffer, decryptBuffer } = require("./helper");
+const { encryptBuffer, decryptBuffer } = require("./helper.js");
 
 // Set up readline interface for user input and output streams
 const rl = readline.createInterface({
@@ -8,7 +8,7 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-// Clear the line before exiting
+//Clear the line before exiting
 const clearLine = (dir) => {
   return new Promise((resolve, reject) => {
     process.stdout.clearLine(dir, () => {
@@ -42,27 +42,38 @@ const socket = net.createConnection(
       await moveCursor(0, -1);
       await clearLine(0); // Clear the line before writing the new message
 
-      // Encrypt the message before sending
-      // const encryptedMessage = Encrypt(`${id}-message-${message} "disting disting"`);
-      socket.write(`${id}-message-${message}`);
+      // Encrypt the message sending to server
+      const buffer = Buffer.from(message, "utf-8");
+      const encryptedMessage = encryptBuffer(buffer);
+      socket.write(`${id}-message-${encryptedMessage}`);
     };
 
     ask();
 
     // Handle incoming data from the server
     socket.on("data", async (data) => {
-
-      // Move the cursor to the beginning of the line for the next message
-      console.log();
+      //console.log(data.toString("utf-8"), "AAAA server message on client");
       
-      await moveCursor(0,-1); // Move the cursor to the beginning of the line
+      // Move the cursor to the beginning of the line for the next message
+      await moveCursor(0, -1); // Move the cursor to the beginning of the line
       await clearLine(0); // Clear the line before writing the new message
 
-      if (data.toString("utf-8").substring(0,2) === "id") {
+      if (data.toString("utf-8").substring(0, 2) === "id") {
         id = data.toString("utf-8").substring(3);
         console.log(`Your ID is ${id}! \n`);
-      }else {
-        console.log(data.toString("utf-8"));
+      } else {
+        const dataString = data.toString("utf-8");
+
+        //console.log(dataString, "Message Original ");
+
+        const id = dataString.substring(0, dataString.indexOf(":"));
+        //console.log(id, "test id RRRRRRR");
+        
+        const message = dataString.substring(
+          dataString.indexOf("-message-") + 9
+        );
+        const decryptedBuffer = decryptBuffer(message);
+        console.log(`${id} Message: ${decryptedBuffer}`);
       }
 
       // Prompt the user for the next message
